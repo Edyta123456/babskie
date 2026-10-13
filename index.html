@@ -82,8 +82,9 @@ svg.ic{flex:0 0 auto}
 /* karty wyjazdów */
 .tcard{position:relative;display:flex;align-items:stretch;background:var(--card);border-radius:18px;box-shadow:var(--shadow);margin:0 0 14px;cursor:pointer}
 .tcard .thumb{flex:0 0 42%;padding:8px 0 8px 8px;display:flex;background:var(--card);border-radius:18px 0 0 18px}
-.tcard .thumb .fr{width:100%;cursor:pointer;display:flex;flex-direction:column;padding:4px 4px 12px;min-height:120px}
-.tcard .thumb .fr>img,.tcard .thumb .fr>.ph{flex:1;width:100%;height:100%;min-height:0;aspect-ratio:auto;object-fit:cover}
+.tcard .thumb .fr{width:100%;cursor:pointer;align-self:center;padding:4px 4px 12px}
+.tcard .thumb .fr>img,.tcard .thumb .fr>.ph{width:100%;height:auto;aspect-ratio:1/1;object-fit:cover}
+.tcard .thumb .fr>img{display:block}
 .tcard .tinfo{flex:1;min-width:0;padding:16px 44px 14px 16px;display:flex;flex-direction:column}
 .tcard h3{font-size:1.15rem;font-weight:700;margin:0 0 4px;line-height:1.25;overflow-wrap:anywhere}
 .tcard .dates{color:var(--muted);font-size:.92rem}
@@ -186,6 +187,16 @@ textarea{min-height:150px;resize:vertical}
 .status{margin:14px 0 0;font-size:.9rem;color:var(--muted)}
 
 /* ekrany logowania */
+.auth{display:flex;flex-direction:column}
+.auth-hero{padding:70px 24px 74px;text-align:center}
+.auth-title{position:relative;z-index:2;font-family:'Caveat',cursive;font-weight:700;font-size:3.4rem;line-height:1.05}
+.auth-sub{position:relative;z-index:2;margin:10px 0 0;opacity:.92;font-weight:500}
+.auth-sheet{flex:1;padding:30px 22px 40px;min-height:0}
+.auth-sheet h2{font-size:1.5rem;margin:0 0 4px}
+.auth-sheet form{margin-top:16px}
+.auth-sheet input{width:100%;font:inherit;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.auth-sheet .status{min-height:1.3em;color:var(--muted);font-size:.9rem;margin:8px 0 0}
+.auth-sheet .pbtn{margin-top:14px}
 .center-card{max-width:380px;margin:14vh auto 0;background:#fff;padding:30px 22px 22px;border-radius:22px;box-shadow:var(--shadow);text-align:center}
 .center-card h1{font-family:'Caveat',cursive;font-weight:700;font-size:2.8rem;color:var(--olive-d);margin:0;line-height:1.1}
 .center-card form{text-align:left}
@@ -217,6 +228,9 @@ body{background:var(--bg) radial-gradient(circle at 15% 8%,#ffd9e6 0,transparent
 .pbtn{box-shadow:0 4px 12px rgba(224,121,159,.35)}
 .userbtn,.iconbtn:hover,.rbtn.light{background:#fbe3ec}
 .mtn{display:none}
+.auth-title{font-family:'Pacifico','Caveat',cursive;font-weight:400;color:#fff;text-shadow:0 2px 10px rgba(150,80,130,.35)}
+.auth-sub{color:#fff;text-shadow:0 1px 6px rgba(150,80,130,.3)}
+.auth-hero:not(.has-cover) .auth-sub{color:#fff}
 .addph{background:#fbe3ec;color:#c9628a}.addph:hover{background:#f8d3e1}
 .empty{color:#a77ae6}
 /* wydarzenia z życia */
@@ -492,17 +506,19 @@ function openLightbox(list, start){
 function showSetupNeeded(){
   app.innerHTML = `<div class="app"><div class="cc-wrap"><div class="center-card"><h1>Prawie gotowe</h1><p>W pliku <b>index.html</b> uzupełnij na górze sekcję <b>CONFIG</b> (adres i klucz z Supabase), zgodnie z instrukcją.</p></div></div></div>`;
 }
+function authScreen(title, sub, inner){
+  return `<div class="app auth"><div class="hero auth-hero"><div class="auth-title">${esc(title)}</div><p class="auth-sub">${esc(sub)}</p></div><div class="sheet auth-sheet">${inner}</div></div>`;
+}
 function showLogin(){
   app.innerHTML = `
-    <div class="app"><div class="cc-wrap"><div class="center-card">
-      <h1>${esc(CONFIG.TITLE)}</h1>
+    ${authScreen(CONFIG.TITLE, 'Wspólne wspomnienia w jednym miejscu', `
+      <h2>Witaj!</h2>
       <p class="muted">Wpisz hasło grupy, żeby wejść.</p>
       <form id="f">
         <input type="password" id="pw" placeholder="Hasło" autocomplete="current-password" autofocus>
         <p class="status" id="st"></p>
         <button class="pbtn" type="submit">Wejdź</button>
-      </form>
-    </div></div></div>`;
+      </form>`)}`;
   $('#f').onsubmit = async e => {
     e.preventDefault();
     const pw = $('#pw').value;
@@ -515,15 +531,14 @@ function showLogin(){
 }
 function askName(change = false){
   app.innerHTML = `
-    <div class="app"><div class="cc-wrap"><div class="center-card">
-      <h1>${change ? 'Zmień imię' : 'Kim jesteś?'}</h1>
+    ${authScreen(CONFIG.TITLE, 'Wspólne wspomnienia w jednym miejscu', `
+      <h2>${change ? 'Zmień imię' : 'Kim jesteś?'}</h2>
       <p class="muted">Pod tym imieniem będą podpisane Twoje wspomnienia. Każdy może poprawić cudzy wpis (np. błędną datę), ale usunąć wpis może tylko jego autor.</p>
       <form id="f">
         <input id="nm" maxlength="40" placeholder="Twoje imię lub ksywka" value="${esc(author)}" autofocus>
         <button class="pbtn" type="submit">Zapisz</button>
         ${change ? '<button class="pbtn ghost" type="button" id="cn">Anuluj</button>' : ''}
-      </form>
-    </div></div></div>`;
+      </form>`)}`;
   if (change) $('#cn').onclick = route;
   $('#f').onsubmit = e => {
     e.preventDefault();
@@ -571,7 +586,7 @@ async function viewHome(){
   const hasLife = allTrips.some(isLife);
   const cards = trips.map((x, i) => `
     <div class="tcard" data-open="${x.id}" role="link" tabindex="0">
-      <div class="thumb"><figure class="fr wide" style="--r:${rot(i)}deg">${urls[x.cover_path] ? `<img src="${urls[x.cover_path]}" alt="">` : (isLife(x) ? `<div class="ph ev">${esc(catParts(x.category).icon)}</div>` : `<div class="ph">${esc((x.name || '?').trim().charAt(0).toUpperCase())}</div>`)}</figure></div>
+      <div class="thumb"><figure class="fr" style="--r:${rot(i)}deg">${urls[x.cover_path] ? `<img src="${urls[x.cover_path]}" alt="">` : (isLife(x) ? `<div class="ph ev">${esc(catParts(x.category).icon)}</div>` : `<div class="ph">${esc((x.name || '?').trim().charAt(0).toUpperCase())}</div>`)}</figure></div>
       <div class="tinfo">
         ${catBadge(x)}
         <h3>${esc(x.name)}</h3>
