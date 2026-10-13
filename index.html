@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ee5a8f">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Babskie">
 <title>Babskie</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Nunito:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
@@ -107,6 +114,8 @@ textarea{min-height:140px;resize:vertical}
 
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;z-index:200;max-width:90vw}
 @media (max-width:520px){.row{flex-direction:column;gap:0}.trip-head h1{font-size:2.4rem}}
+.fld.two{display:flex;gap:8px}
+.fld.two select{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -150,8 +159,6 @@ function fmtRange(a, b, prec){
   if (!b || b === a) return x;
   return `${x} – ${fmtDate(b, prec)}`;
 }
-const inputType = prec => prec === 'year' ? 'number' : prec === 'month' ? 'month' : 'date';
-const toInputVal = (d, prec) => !d ? '' : prec === 'year' ? d.slice(0,4) : prec === 'month' ? d.slice(0,7) : d;
 function fromInputVal(v, prec){
   if (!v) return null;
   if (prec === 'year') return /^\d{4}$/.test(v) ? v + '-01-01' : null;
@@ -160,7 +167,37 @@ function fromInputVal(v, prec){
 }
 const todayStr = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; };
 
-/* wybór daty z poziomem dokładności (dzień / miesiąc / rok) */
+/* wybór daty z poziomem dokładności (dzień / miesiąc / rok); rok i miesiąc wybierane z listy */
+const YEAR_MAX = new Date().getFullYear() + 1, YEAR_MIN = 1930;
+function opt(value, label){ const o = document.createElement('option'); o.value = value; o.textContent = label; return o; }
+function buildField(prec, val, optional){
+  const el = document.createElement('div');
+  if (!optional && !val) val = todayStr();
+  if (prec === 'day'){
+    const inp = document.createElement('input'); inp.type = 'date'; inp.value = val || '';
+    el.appendChild(inp);
+    return { el, get: () => fromInputVal(inp.value, 'day') };
+  }
+  const p = val ? parts(val) : null;
+  const ys = document.createElement('select');
+  if (optional) ys.appendChild(opt('', 'rok'));
+  const years = [];
+  for (let y = YEAR_MAX; y >= YEAR_MIN; y--) years.push(y);
+  if (p && !years.includes(p.y)){ years.push(p.y); years.sort((a, b) => b - a); }
+  years.forEach(y => ys.appendChild(opt(String(y), String(y))));
+  ys.value = p ? String(p.y) : '';
+  if (prec === 'year'){
+    el.appendChild(ys);
+    return { el, get: () => ys.value ? ys.value + '-01-01' : null };
+  }
+  const ms = document.createElement('select');
+  if (optional) ms.appendChild(opt('', 'miesiąc'));
+  MONTHS.forEach((n, i) => ms.appendChild(opt(String(i + 1), n)));
+  ms.value = p ? String(p.m) : '';
+  el.className = 'fld two';
+  el.appendChild(ms); el.appendChild(ys);
+  return { el, get: () => (ys.value && ms.value) ? `${ys.value}-${String(ms.value).padStart(2, '0')}-01` : null };
+}
 function makeDatePicker({date = null, end = null, prec = 'day', withEnd = false} = {}){
   const el = document.createElement('div');
   el.innerHTML = `
@@ -172,30 +209,22 @@ function makeDatePicker({date = null, end = null, prec = 'day', withEnd = false}
       </select>
     </label>
     <div class="row">
-      <label>${withEnd ? 'Od' : 'Data'}<input class="d1"></label>
-      ${withEnd ? '<label>Do (opcjonalnie)<input class="d2"></label>' : ''}
+      <label>${withEnd ? 'Od' : 'Data'}<div class="slot1"></div></label>
+      ${withEnd ? '<label>Do (opcjonalnie)<div class="slot2"></div></label>' : ''}
     </div>`;
-  const sel = $('.prec', el), d1 = $('.d1', el), d2 = $('.d2', el);
-  let cur1 = date, cur2 = end, curPrec = prec;
+  const sel = $('.prec', el), s1 = $('.slot1', el), s2 = $('.slot2', el);
+  let cur1 = date, cur2 = end, curPrec = prec, f1, f2;
   function paint(){
-    [d1, d2].forEach((inp, i) => {
-      if (!inp) return;
-      inp.type = inputType(curPrec);
-      if (curPrec === 'year'){ inp.min = 1900; inp.max = 2100; inp.placeholder = 'np. 2014'; }
-      else { inp.removeAttribute('min'); inp.removeAttribute('max'); inp.placeholder = ''; }
-      inp.value = toInputVal(i ? cur2 : cur1, curPrec);
-    });
+    f1 = buildField(curPrec, cur1, false); s1.replaceChildren(f1.el);
+    if (s2){ f2 = buildField(curPrec, cur2, true); s2.replaceChildren(f2.el); }
   }
   sel.value = prec; paint();
   sel.onchange = () => {
-    cur1 = fromInputVal(d1.value, curPrec);
-    if (d2) cur2 = fromInputVal(d2.value, curPrec);
+    cur1 = f1.get() || cur1;
+    if (f2) cur2 = f2.get();
     curPrec = sel.value; paint();
   };
-  return {
-    el,
-    get: () => ({ date: fromInputVal(d1.value, curPrec), end: d2 ? fromInputVal(d2.value, curPrec) : null, prec: curPrec })
-  };
+  return { el, get: () => ({ date: f1.get(), end: f2 ? f2.get() : null, prec: curPrec }) };
 }
 
 /* ---------- zdjęcia ---------- */
