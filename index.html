@@ -101,12 +101,13 @@ svg.ic{flex:0 0 auto}
 .hero-body{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-top:28px}
 .hero-txt{min-width:0}
 .hero h1{font-family:'Caveat',cursive;font-weight:700;font-size:2.7rem;line-height:1.25;margin:0;overflow-wrap:anywhere}
-.hero-dates{margin-top:10px;font-weight:600;font-size:1rem}
+.hero-year{margin-top:8px;font-weight:800;font-size:1.9rem;line-height:1.1}
+.hero-dates{margin-top:2px;font-weight:600;font-size:.98rem;opacity:.92}
 .hero-count{margin-top:12px;display:inline-flex;align-items:center;gap:6px;font-weight:600;opacity:.95}
 .hero.has-cover{background-size:cover;background-position:center;min-height:280px;display:flex;flex-direction:column;justify-content:space-between}
 .hero.has-cover::before{display:none}
 .hero.has-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,24,10,.45) 0%,rgba(20,24,10,.55) 55%,rgba(20,24,10,.72) 100%);z-index:1}
-.hero h1,.hero-dates,.hero-count{text-shadow:0 1px 6px rgba(0,0,0,.35)}
+.hero h1,.hero-year,.hero-dates,.hero-count{text-shadow:0 1px 6px rgba(0,0,0,.35)}
 .mk{background-image:linear-gradient(100deg,transparent 0,var(--mk1) 2%,var(--mk1) 98%,transparent 100%);padding:.04em .32em;margin:0 -.1em;border-radius:.5em .15em .45em .2em / .3em .2em .35em .2em;-webkit-box-decoration-break:clone;box-decoration-break:clone;color:var(--ink)}
 .mk.mk2{background-image:linear-gradient(100deg,transparent 0,var(--mk2) 2%,var(--mk2) 98%,transparent 100%);display:inline-block;transform:rotate(-.8deg);padding:.12em .5em}
 
@@ -178,6 +179,20 @@ textarea{min-height:150px;resize:vertical}
 .row>label{flex:1;min-width:0}
 .fld.two{display:flex;gap:8px}
 .hint{font-size:.82rem;margin:6px 0 0}
+.row:has(.calwrap){flex-direction:column;gap:0}
+.cal{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 10px 8px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 8px}
+.cal-h b{font-size:1rem;text-transform:capitalize}
+.cn{width:38px;height:38px;border-radius:50%;border:0;background:var(--olive-l);color:var(--olive-d);font-size:1.4rem;line-height:1;cursor:pointer}
+.cn:disabled{opacity:.3;cursor:default}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-g i{font-style:normal;font-size:.72rem;font-weight:600;color:var(--muted);padding:2px 0}
+.cd{aspect-ratio:1/1;border:0;border-radius:50%;background:none;font:inherit;font-size:.95rem;cursor:pointer;padding:0;color:#cfc8ba}
+.cd.ok{background:var(--olive-l);color:var(--olive-d);font-weight:700}
+.cd.off{cursor:default}
+.cd.sel{background:var(--olive);color:#fff}
+.cal-f{display:flex;justify-content:space-between;align-items:center;padding:8px 4px 0;font-size:.85rem;color:var(--muted)}
+.cclr{border:0;background:none;color:var(--olive-d);font-weight:600;cursor:pointer;text-decoration:underline;font:inherit}
 .fld.two select{flex:1;min-width:0}
 .thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .th{position:relative}
@@ -320,7 +335,7 @@ function fmtDate(d, prec){
   return `${p.d} ${MONTHS_GEN[p.m-1]} ${p.y}`;
 }
 /* kafelek: duży rok i drobna krótka data, np. „12–15 paź” */
-function cardDates(t){
+function dateParts(t){
   const a = parts(t.date_from), b = t.date_to ? parts(t.date_to) : null, prec = t.date_precision;
   const diffYear = b && b.y !== a.y;
   const year = diffYear ? `${a.y}–${b.y}` : String(a.y);
@@ -332,7 +347,11 @@ function cardDates(t){
     else if (b.m === a.m && !diffYear) short = `${a.d}–${b.d} ${MON_ABBR[a.m - 1]}`;
     else short = `${a.d} ${MON_ABBR[a.m - 1]} – ${b.d} ${MON_ABBR[b.m - 1]}`;
   }
-  return `<div class="yr">${esc(year)}</div>${short ? `<div class="dates">${esc(short)}</div>` : ''}`;
+  return { year, short };
+}
+function cardDates(t){
+  const d = dateParts(t);
+  return `<div class="yr">${esc(d.year)}</div>${d.short ? `<div class="dates">${esc(d.short)}</div>` : ''}`;
 }
 function fmtRange(a, b, prec){
   const x = fmtDate(a, prec);
@@ -371,10 +390,51 @@ function tripRange(trip){
   const a = trip.date_from, b = trip.date_to || trip.date_from;
   return { min: startOfPeriod(a, prec), max: endOfPeriod(b, prec) };
 }
+
+const WD = ['Pn','Wt','Śr','Cz','Pt','So','Nd'];
+function buildCalendar(val, optional, range){
+  const el = document.createElement('div'); el.className = 'calwrap';
+  let sel = val || null;
+  const first = sel || range.min;
+  let vy = parts(first).y, vm = parts(first).m;
+  const monthKey = (y, m) => `${y}-${pad2(m)}`;
+  const minK = range.min.slice(0, 7), maxK = range.max.slice(0, 7);
+  function draw(){
+    const k = monthKey(vy, vm);
+    const dim = new Date(vy, vm, 0).getDate();
+    const lead = (new Date(vy, vm - 1, 1).getDay() + 6) % 7;
+    let cells = '';
+    for (let i = 0; i < lead; i++) cells += '<span></span>';
+    for (let d = 1; d <= dim; d++){
+      const ds = `${vy}-${pad2(vm)}-${pad2(d)}`;
+      const ok = ds >= range.min && ds <= range.max;
+      cells += `<button type="button" class="cd ${ok ? 'ok' : 'off'}${ds === sel ? ' sel' : ''}" data-d="${ds}" ${ok ? '' : 'disabled'}>${d}</button>`;
+    }
+    el.innerHTML = `<div class="cal">
+      <div class="cal-h"><button type="button" class="cn" data-n="-1" ${k <= minK ? 'disabled' : ''} aria-label="Poprzedni miesiąc">‹</button><b>${MONTHS[vm - 1]} ${vy}</b><button type="button" class="cn" data-n="1" ${k >= maxK ? 'disabled' : ''} aria-label="Następny miesiąc">›</button></div>
+      <div class="cal-g">${WD.map(w => `<i>${w}</i>`).join('')}${cells}</div>
+      <div class="cal-f"><span>${sel ? 'Wybrano: ' + esc(fmtDate(sel, 'day')) : (optional ? 'Nie wybrano' : 'Wybierz dzień')}</span>${optional && sel ? '<button type="button" class="cclr">wyczyść</button>' : ''}</div>
+    </div>`;
+  }
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    const n = e.target.closest('.cn'), d = e.target.closest('.cd'), c = e.target.closest('.cclr');
+    if (n){ vm += Number(n.dataset.n); if (vm < 1){ vm = 12; vy--; } if (vm > 12){ vm = 1; vy++; } draw(); }
+    else if (d && !d.disabled){ sel = d.dataset.d; draw(); el.dispatchEvent(new Event('change', { bubbles: true })); }
+    else if (c){ sel = null; draw(); el.dispatchEvent(new Event('change', { bubbles: true })); }
+  });
+  draw();
+  return { el, get: () => sel };
+}
 function buildField(prec, val, optional, range){
   const el = document.createElement('div');
   if (!optional && !val) val = todayStr();
   if (val && range){ if (optional){ if (!fits(val, prec, range)) val = null; } else val = clampTo(val, range); }
+  if (prec === 'day' && range){
+    const c = buildCalendar(val, optional, range);
+    el.appendChild(c.el);
+    return { el, get: () => c.get() };
+  }
   if (prec === 'day'){
     const inp = document.createElement('input'); inp.type = 'date'; inp.value = val || '';
     if (range){ inp.min = range.min; inp.max = range.max; }
@@ -828,7 +888,7 @@ function heroHtml(trip, urls, count, interactive){
       <div class="hero-txt">
         ${catBadge(trip, true)}
         <h1>${esc(trip.name)}</h1>
-        <div class="hero-dates">${esc(fmtRange(trip.date_from, trip.date_to, trip.date_precision))}</div>
+        <div class="hero-year">${esc(dateParts(trip).year)}</div>${dateParts(trip).short ? `<div class="hero-dates">${esc(dateParts(trip).short)}</div>` : ''}
         <div class="hero-count">${ICON.photo}${count}</div>
       </div>
     </div>
