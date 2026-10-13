@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e58fb0">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -29,7 +29,7 @@
 .c4{--h1:#9cc8f4;--h2:#c4b2f2;--dot:#5a9ee6}
 .c5{--h1:#cdb2f4;--h2:#f4a9d0;--dot:#a77ae6}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;overflow-x:hidden}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.5}
 button{font-family:inherit}
 .app{max-width:640px;margin:0 auto;min-height:100vh;background:var(--surface);box-shadow:0 0 40px rgba(60,50,30,.08);position:relative}
@@ -172,20 +172,22 @@ svg.ic{flex:0 0 auto}
 .sh-top h2{flex:1;margin:0;font-size:1.45rem;font-weight:700}
 .sh-sub{margin:0 0 4px;font-size:.92rem}
 label{display:block;margin:18px 0 6px;font-size:.85rem;font-weight:600;color:var(--muted)}
-input,select,textarea{width:100%;font:inherit;color:var(--ink);padding:12px 14px;border:1px solid var(--line);background:#fff;border-radius:12px}
+input,select,textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);padding:12px 14px;border:1px solid var(--line);background:#fff;border-radius:12px}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--olive-l);border-color:var(--olive)}
 textarea{min-height:150px;resize:vertical}
 .row{display:flex;gap:12px}
 .row>label{flex:1;min-width:0}
 .fld.two{display:flex;gap:8px}
 .hint{font-size:.82rem;margin:6px 0 0}
+@media (hover:none){.dnd{display:none!important}}
+.ovl.dragging .ovl-in,.app.dragging{outline:3px dashed var(--olive);outline-offset:-10px;background-color:var(--olive-l)}
 .row:has(.calwrap){flex-direction:column;gap:0}
 .cal{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 10px 8px}
 .cal-h{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 8px}
 .cal-h b{font-size:1rem;text-transform:capitalize}
 .cn{width:38px;height:38px;border-radius:50%;border:0;background:var(--olive-l);color:var(--olive-d);font-size:1.4rem;line-height:1;cursor:pointer}
 .cn:disabled{opacity:.3;cursor:default}
-.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
 .cal-g i{font-style:normal;font-size:.72rem;font-weight:600;color:var(--muted);padding:2px 0}
 .cd{aspect-ratio:1/1;border:0;border-radius:50%;background:none;font:inherit;font-size:.95rem;cursor:pointer;padding:0;color:#cfc8ba}
 .cd.ok{background:var(--olive-l);color:var(--olive-d);font-weight:700}
@@ -572,6 +574,23 @@ function catParts(c){
 const catBadge = (t, big) => isLife(t) ? `<span class="catbadge${big ? ' big' : ''}">${esc(catParts(t.category).icon)} ${esc(catParts(t.category).name)}</span>` : '';
 const noun = t => isLife(t) ? 'wydarzenie' : 'wyjazd';
 
+/* przeciąganie zdjęć z innego okna (np. z folderu na komputerze) */
+const dragHasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+function enableDrop(el, cb){
+  let depth = 0;
+  el.addEventListener('dragenter', e => { if (dragHasFiles(e)){ e.preventDefault(); depth++; el.classList.add('dragging'); } });
+  el.addEventListener('dragover', e => { if (dragHasFiles(e)) e.preventDefault(); });
+  el.addEventListener('dragleave', e => { if (dragHasFiles(e) && --depth <= 0){ depth = 0; el.classList.remove('dragging'); } });
+  el.addEventListener('drop', e => {
+    if (!dragHasFiles(e)) return;
+    e.preventDefault(); depth = 0; el.classList.remove('dragging');
+    const f = Array.from(e.dataTransfer.files).filter(x => /^image\//.test(x.type));
+    if (f.length) cb(f); else toast('Przeciągnij pliki ze zdjęciami');
+  });
+}
+// upuszczenie pliku obok formularza nie może otwierać zdjęcia w przeglądarce
+['dragover', 'drop'].forEach(n => window.addEventListener(n, e => { if (dragHasFiles(e)) e.preventDefault(); }));
+
 /* ---------- drobne narzędzia interfejsu ---------- */
 function toast(msg){
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
@@ -786,7 +805,7 @@ async function openTripSheet(trip, kindArg){
     <div id="dp"></div>
     <label>Okładka (zdjęcie, opcjonalnie)</label>
     <input type="file" id="cv" accept="image/*" hidden>
-    <button type="button" class="chip" id="pickcv">${ICON.cam}Wybierz zdjęcie</button> <span class="muted" id="cvname" style="font-size:.85rem"></span>
+    <button type="button" class="chip" id="pickcv">${ICON.cam}Wybierz zdjęcie</button><span class="muted hint dnd" style="display:block">Możesz też przeciągnąć zdjęcie z innego okna tutaj.</span> <span class="muted" id="cvname" style="font-size:.85rem"></span>
     ${trip && trip.cover_path ? '<p class="muted" style="margin:8px 0 0;font-size:.85rem">Wybranie nowego zdjęcia zastąpi obecną okładkę.</p>' : ''}
     <p class="status" id="st"></p>`);
   const titleEl = $('h2', sh.el);
@@ -817,6 +836,7 @@ async function openTripSheet(trip, kindArg){
   const cv = $('#cv', sh.el);
   $('#pickcv', sh.el).onclick = () => cv.click();
   cv.onchange = () => { $('#cvname', sh.el).textContent = cv.files[0] ? cv.files[0].name : ''; };
+  enableDrop(sh.el, f => { const dt = new DataTransfer(); dt.items.add(f[0]); cv.files = dt.files; cv.onchange(); });
   sh.saveBtn.onclick = async () => {
     const name = $('#tn', sh.el).value.trim();
     const d = picker.get();
@@ -920,6 +940,7 @@ async function viewTrip(id){
   </div>`;
   $('#tripMenu').onclick = e => openMenu(e.currentTarget, tripMenuItems(trip, null));
   $('#addMem').onclick = () => openMemorySheet(trip, null, {});
+  enableDrop($('.app', app), f => openMemorySheet(trip, null, {}, f));
   $('#tabs').onclick = e => { const b = e.target.closest('.tab'); if (b){ curTab = b.dataset.t; drawPanel(); } };
 
   function drawPanel(){
@@ -991,7 +1012,7 @@ async function addPhotosTo(mem, files){
 }
 
 /* ---------- dodawanie / edycja wspomnienia ---------- */
-function openMemorySheet(trip, mem, urls){
+function openMemorySheet(trip, mem, urls, initialFiles){
   const sh = openSheet(mem ? 'Edytuj wpis' : 'Dodaj wpis', `
     <p class="muted sh-sub">${esc(trip.name)}</p>
     <div id="dp"></div>
@@ -999,6 +1020,7 @@ function openMemorySheet(trip, mem, urls){
     <label>Notatka<textarea id="tx" placeholder="Co pamiętasz z tego dnia?"></textarea></label>
     <label>Zdjęcia</label>
     <div class="thumbs" id="th"></div>
+    <p class="muted hint dnd">Możesz też przeciągnąć zdjęcia z innego okna i upuścić je tutaj.</p>
     <div class="add-row"><button type="button" class="plus-tile" id="plus" aria-label="Dodaj zdjęcia">${ICON.plus}</button><button type="button" class="pbtn" id="addp">${ICON.cam}Dodaj zdjęcia</button></div>
     <p class="status" id="st"></p>`);
   let range = tripRange(trip);
@@ -1012,7 +1034,7 @@ function openMemorySheet(trip, mem, urls){
   $('#ti', sh.el).value = mem ? (mem.title || '') : '';
   const tx = $('#tx', sh.el); tx.value = mem ? (mem.body || '') : '';
   let keep = mem ? [...(mem.photos || [])] : [];
-  let files = [];
+  let files = initialFiles ? [...initialFiles] : [];
   const th = $('#th', sh.el);
   function paintThumbs(){
     th.innerHTML = '';
@@ -1032,6 +1054,7 @@ function openMemorySheet(trip, mem, urls){
   }
   paintThumbs();
   const choose = () => pickPhotos(f => { files.push(...f); paintThumbs(); });
+  enableDrop(sh.el, f => { files.push(...f); paintThumbs(); });
   $('#plus', sh.el).onclick = choose; $('#addp', sh.el).onclick = choose;
   sh.saveBtn.onclick = async () => {
     const d = picker.get();
