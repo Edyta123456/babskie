@@ -116,6 +116,43 @@ textarea{min-height:140px;resize:vertical}
 @media (max-width:520px){.row{flex-direction:column;gap:0}.trip-head h1{font-size:2.4rem}}
 .fld.two{display:flex;gap:8px}
 .fld.two select{flex:1;min-width:0}
+.edited{font-size:.82rem;color:var(--muted);font-style:italic;margin-top:2px}
+
+:root{--chip-fg:#6a3dc2;--chip-bd:transparent;--chip-bw:2px;--chip-bg:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,var(--c0),var(--c1),var(--c5)) border-box;--chip-sh:0 2px 6px rgba(90,40,90,.18);
+ --chip-hbg:linear-gradient(135deg,var(--c0),var(--c1)) padding-box,linear-gradient(135deg,var(--c0),var(--c5)) border-box;--chip-hfg:#fff;--chip-hsh:0 6px 14px rgba(238,90,143,.38);--chip-focus:var(--c5);
+ --dng:#c4284a;--dng-bd:transparent;--dng-h:#d72b50;--mk1:rgba(255,238,52,.92);--mk2:rgba(255,128,184,.62)}
+.chip.danger{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,#ff7a90,#ee5a8f) border-box}
+.chip.danger:hover{background:linear-gradient(135deg,#e63757,#ee5a8f) padding-box,linear-gradient(135deg,#e63757,#ee5a8f) border-box}
+
+/* ===== chipsy, zakreślacz, układ przycisków ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4em}
+.btn .ic{width:19px;height:19px;stroke-width:2.6}
+.chip{display:inline-flex;align-items:center;gap:.5em;font-family:inherit;font-weight:700;font-size:.85rem;line-height:1;letter-spacing:.03em;padding:.65em 1.1em;border-radius:99px;cursor:pointer;text-decoration:none;white-space:nowrap;
+  color:var(--chip-fg);background:var(--chip-bg);border:var(--chip-bw) solid var(--chip-bd);box-shadow:var(--chip-sh);transition:transform .12s,box-shadow .12s,background .15s,color .15s}
+.chip:hover{transform:translateY(-1px);background:var(--chip-hbg);color:var(--chip-hfg);box-shadow:var(--chip-hsh)}
+.chip:active{transform:translateY(0)}
+.chip:focus-visible{outline:3px solid var(--chip-focus);outline-offset:2px}
+.chip .ic{flex:0 0 auto}
+.chip.big{font-size:1.02rem;padding:.78em 1.4em;gap:.55em}
+.chip.big .ic{width:20px;height:20px}
+.chip.sm{font-size:.78rem;padding:.55em .95em}
+.chip.danger{--chip-fg:var(--dng);--chip-bd:var(--dng-bd);--chip-hbg:var(--dng-h);--chip-hfg:#fff}
+.who{gap:8px}
+.who .chip{font-size:.8rem;padding:.55em 1em}
+.back{margin:14px 0 6px}
+.trip-actions{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.entry-actions{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.bar{flex-wrap:nowrap;gap:10px}
+.bar .btn{flex:1 1 auto;white-space:nowrap}
+.bar .chip{flex:0 0 auto}
+.trip-head h1{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--ink);line-height:1.15}
+.trip-head .sub{margin-top:10px;font-size:1.05rem;font-weight:700}
+.mk{background-image:linear-gradient(100deg,transparent 0,var(--mk1) 2%,var(--mk1) 98%,transparent 100%);padding:.04em .32em;margin:0 -.1em;border-radius:.5em .15em .45em .2em / .3em .2em .35em .2em;-webkit-box-decoration-break:clone;box-decoration-break:clone;color:var(--ink)}
+.mk.mk2{background-image:linear-gradient(100deg,transparent 0,var(--mk2) 2%,var(--mk2) 98%,transparent 100%);display:inline-block;transform:rotate(-.8deg);padding:.12em .5em}
+@media (max-width:380px){.bar .btn{font-size:1.15rem;padding:.25em .7em}.bar .chip.big{padding:.7em 1em;font-size:.9rem}.chip.big{font-size:.95rem}}
+.bar .btn{font-size:clamp(1.1rem,4.8vw,1.4rem);padding:.25em .85em}
+.bar .chip.big{padding:.72em 1.05em;font-size:.92rem}
+@media (max-width:380px){.bar .chip .lbl{display:none}.bar .chip.big{padding:.78em .95em}}
 </style>
 </head>
 <body>
@@ -286,12 +323,22 @@ function openLightbox(list, start){
   document.body.appendChild(lb); show();
 }
 const rot = i => [-1.2, .8, -.5, 1.1, -.9, .4][i % 6];
+const svgi = d => `<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  pen: svgi('<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
+  trash: svgi('<path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'),
+  back: svgi('<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>'),
+  out: svgi('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>'),
+  plus: svgi('<path d="M12 5v14M5 12h14"/>'),
+  down: svgi('<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>'),
+  up: svgi('<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>'),
+};
 
 function shell(content){
   app.innerHTML = `
     <header class="top">
       <a class="brand hand" href="#/">${esc(CONFIG.TITLE)}</a>
-      <div class="who"><button class="link" id="chName" title="Zmień imię">✎ ${esc(author)}</button><button class="link" id="logout">Wyloguj</button></div>
+      <div class="who"><button class="chip" id="chName" title="Zmień imię">${ICON.pen}${esc(author)}</button><button class="chip" id="logout">${ICON.out}Wyloguj</button></div>
     </header>
     <main class="wrap">${content}</main>`;
   $('#chName').onclick = () => askName(true);
@@ -326,7 +373,7 @@ function askName(change = false){
   app.innerHTML = `
     <div class="center-card">
       <h1>${change ? 'Zmień imię' : 'Kim jesteś?'}</h1>
-      <p class="muted">Pod tym imieniem będą podpisane Twoje wspomnienia i tylko Ty zobaczysz przy nich przyciski edycji.</p>
+      <p class="muted">Pod tym imieniem będą podpisane Twoje wspomnienia. Każdy może poprawić cudzy wpis (np. błędną datę), ale usunąć wpis może tylko jego autor.</p>
       <form id="f">
         <input id="nm" maxlength="40" placeholder="Twoje imię lub ksywka" value="${esc(author)}" autofocus>
         <div class="actions">${change ? '<button class="btn ghost" type="button" id="cn">Anuluj</button>' : ''}<button class="btn" type="submit">Zapisz</button></div>
@@ -357,8 +404,8 @@ async function viewHome(){
     </a>`).join('');
   shell(`
     <div class="bar">
-      <button class="btn" id="addTrip">+ Nowy wyjazd</button>
-      ${trips.length > 1 ? `<button class="btn ghost" id="sortT">${tripsAsc ? 'Od najstarszych ↓' : 'Od najnowszych ↑'}</button>` : ''}
+      <button class="btn" id="addTrip">${ICON.plus}Nowy wyjazd</button>
+      ${trips.length > 1 ? `<button class="chip big" id="sortT" title="Zmień kolejność" aria-label="Zmień kolejność">${tripsAsc ? ICON.down : ICON.up}<span class="lbl">${tripsAsc ? 'Najstarsze' : 'Najnowsze'}</span></button>` : ''}
     </div>
     ${trips.length ? `<div class="grid">${tiles}</div>` : '<div class="empty hand big">Nie ma jeszcze żadnego wyjazdu.<br>Dodaj pierwszy!</div>'}`);
   $('#addTrip').onclick = () => openTripModal(null);
@@ -393,7 +440,12 @@ function openTripModal(trip){
         cover_path = np;
       }
       const row = { name, date_from: d.date, date_to: d.end, date_precision: d.prec, cover_path };
-      if (trip){ const { error } = await sb.from('trips').update(row).eq('id', trip.id); if (error) throw error; }
+      if (trip){
+        if (author !== trip.created_by) row.edited_by = author;
+        let { error } = await sb.from('trips').update(row).eq('id', trip.id);
+        if (error && /edited_by/.test(error.message || '')){ delete row.edited_by; ({ error } = await sb.from('trips').update(row).eq('id', trip.id)); }
+        if (error) throw error;
+      }
       else { row.created_by = author; const { error } = await sb.from('trips').insert(row); if (error) throw error; }
       m.close(); route();
     } catch (err) { toast('Nie udało się zapisać: ' + (err.message || err)); btn.disabled = false; $('#st', m.el).textContent = ''; }
@@ -407,7 +459,7 @@ async function viewTrip(id){
     sb.from('trips').select('*').eq('id', id).single(),
     sb.from('memories').select('*').eq('trip_id', id).order('event_date', { ascending: memAsc }).order('created_at', { ascending: true })
   ]);
-  if (t.error || !t.data) return shell(`<a class="back" href="#/">← wszystkie wyjazdy</a><p class="err">Nie znaleziono wyjazdu.</p>`);
+  if (t.error || !t.data) return shell(`<a class="chip big back" href="#/">${ICON.back}wszystkie wyjazdy</a><p class="err">Nie znaleziono wyjazdu.</p>`);
   if (mm.error) return shell(`<p class="err">Błąd: ${esc(mm.error.message)}</p>`);
   const trip = t.data, mems = mm.data;
   const urls = await signed([trip.cover_path, ...mems.flatMap(x => x.photos || [])]);
@@ -422,35 +474,35 @@ async function viewTrip(id){
       <div class="entry c${mi % 6}">
         <div class="note">
           <div class="meta"><span class="date">${esc(fmtDate(x.event_date, x.date_precision))}</span><span class="by">${esc(x.author)}</span></div>
+          ${x.edited_by ? `<div class="edited">poprawione przez ${esc(x.edited_by)}</div>` : ''}
           ${x.body ? `<p class="body">${esc(x.body)}</p>` : ''}
           ${ph.length ? `<div class="photos">${ph.map((p, i) => `<figure data-m="${mi}" data-i="${i}" style="--r:${rot(mi + i)}deg"><img src="${urls[p]}" loading="lazy" alt=""></figure>`).join('')}</div>` : ''}
-          ${x.author === author ? `<div class="entry-actions"><button class="link" data-edit="${mi}">edytuj</button><button class="link" data-del="${mi}">usuń</button></div>` : ''}
+          <div class="entry-actions"><button class="chip sm" data-edit="${mi}">${ICON.pen}edytuj</button>${x.author === author ? `<button class="chip sm danger" data-del="${mi}">${ICON.trash}usuń</button>` : ''}</div>
         </div>
       </div>`;
   });
 
   shell(`
-    <a class="back" href="#/">← wszystkie wyjazdy</a>
+    <a class="chip big back" href="#/">${ICON.back}wszystkie wyjazdy</a>
     <div class="trip-head">
       ${urls[trip.cover_path] ? `<img class="cover" src="${urls[trip.cover_path]}" alt="">` : ''}
       <div>
-        <h1 class="hand">${esc(trip.name)}</h1>
-        <div class="sub">${esc(fmtRange(trip.date_from, trip.date_to, trip.date_precision))}</div>
-        ${mine ? '<div class="trip-actions"><button class="link" id="editTrip">edytuj wyjazd</button><button class="link" id="delTrip">usuń wyjazd</button></div>' : ''}
+        <h1 class="hand"><span class="mk">${esc(trip.name)}</span></h1>
+        <div class="sub"><span class="mk mk2">${esc(fmtRange(trip.date_from, trip.date_to, trip.date_precision))}</span></div>
+        ${trip.edited_by ? `<div class="edited">poprawione przez ${esc(trip.edited_by)}</div>` : ''}
+        <div class="trip-actions"><button class="chip" id="editTrip">${ICON.pen}edytuj wyjazd</button>${mine ? `<button class="chip danger" id="delTrip">${ICON.trash}usuń wyjazd</button>` : ''}</div>
       </div>
     </div>
     <div class="bar">
-      <button class="btn" id="addMem">+ Dodaj wspomnienie</button>
-      ${mems.length > 1 ? `<button class="btn ghost" id="sortM">${memAsc ? 'Od najstarszych ↓' : 'Od najnowszych ↑'}</button>` : ''}
+      <button class="btn" id="addMem">${ICON.plus}Dodaj wspomnienie</button>
+      ${mems.length > 1 ? `<button class="chip big" id="sortM" title="Zmień kolejność" aria-label="Zmień kolejność">${memAsc ? ICON.down : ICON.up}<span class="lbl">${memAsc ? 'Najstarsze' : 'Najnowsze'}</span></button>` : ''}
     </div>
     ${mems.length ? `<div class="timeline">${html}</div>` : '<div class="empty hand big">Tu jeszcze pusto.<br>Dodaj pierwsze wspomnienie!</div>'}`);
 
   $('#addMem').onclick = () => openMemoryModal(trip, null, {});
   const s = $('#sortM'); if (s) s.onclick = () => { memAsc = !memAsc; viewTrip(id); };
-  if (mine){
-    $('#editTrip').onclick = () => openTripModal(trip);
-    $('#delTrip').onclick = () => deleteTrip(trip, mems);
-  }
+  $('#editTrip').onclick = () => openTripModal(trip);
+  if (mine) $('#delTrip').onclick = () => deleteTrip(trip, mems);
   app.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { const x = mems[+b.dataset.edit]; openMemoryModal(trip, x, urls); });
   app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => deleteMemory(mems[+b.dataset.del]));
   app.querySelectorAll('.photos figure').forEach(f => f.onclick = () => {
@@ -527,7 +579,9 @@ function openMemoryModal(trip, mem, urls){
       const row = { trip_id: trip.id, author: mem ? mem.author : author, body, event_date: d.date, date_precision: d.prec, photos: [...keep, ...uploaded] };
       if (mem){
         row.updated_at = new Date().toISOString();
-        const { error } = await sb.from('memories').update(row).eq('id', mem.id);
+        if (author !== mem.author) row.edited_by = author;
+        let { error } = await sb.from('memories').update(row).eq('id', mem.id);
+        if (error && /edited_by/.test(error.message || '')){ delete row.edited_by; ({ error } = await sb.from('memories').update(row).eq('id', mem.id)); }
         if (error) throw error;
         await removePhotos((mem.photos || []).filter(p => !keep.includes(p)));
       } else {
