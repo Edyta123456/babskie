@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e58fb0">
+<meta name="robots" content="noindex,nofollow">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
@@ -13,7 +14,7 @@
 <title>Babskie</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Nunito:wght@400;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="diary-client.js?v=1"></script>
 <style>
 :root{
   --bg:#fde9ee; --surface:#fffaf8; --card:#ffffff; --ink:#43344a; --muted:#8f7f98; --line:#f3dce6;
@@ -281,9 +282,6 @@ body{background:var(--bg) radial-gradient(circle at 15% 8%,#ffd9e6 0,transparent
 /* ============ USTAWIENIA ============ */
 const CONFIG = {
   TITLE: 'Babskie',
-  SUPABASE_URL: 'https://nduaawdaiytgywbqirad.supabase.co',
-  SUPABASE_ANON_KEY: 'sb_publishable_EEqVdB3ZWZcppDRjlPpUIQ_MgMhe-5-',
-  SHARED_EMAIL: 'babskie@wyjazdy.com',   // ten sam e-mail, który wpiszesz przy tworzeniu konta w Supabase
   EVENTS: false,                            // czy można dodawać wydarzenia z życia (narodziny, zaręczyny...)
   AUTHOR_KEY: 'babskie_author'
 };
@@ -293,8 +291,8 @@ document.title = CONFIG.TITLE;
 const app = document.getElementById('app');
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const notConfigured = CONFIG.SUPABASE_URL.startsWith('WKLEJ') || CONFIG.SUPABASE_ANON_KEY.startsWith('WKLEJ');
-const sb = notConfigured ? null : supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+const notConfigured = false;
+const sb = diaryClient();
 
 let author = '';
 try { author = localStorage.getItem(CONFIG.AUTHOR_KEY) || ''; } catch (e) {}

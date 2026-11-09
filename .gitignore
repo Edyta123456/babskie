@@ -1,0 +1,5 @@
+config.php
+kopia/
+storage/
+install.php.done
+*.sqlite
